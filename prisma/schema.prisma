@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum StatusCheckType {
+  HTTP
+  // DNS
+  // SSL
+  // DISCORD_BOT
+}
+
+model StatusCheck {
+  createdAt DateTime          @default(now())
+  configId  String
+  id        String            @id @default(cuid())
+  config    StatusCheckConfig @relation(fields: [configId], references: [id])
+  label     String            @unique
+  results   Result[]
+}
+
+// @TODO: use explicit configurations such as `HttpCheckConfig` istd. of generic JSON.
+// prisma needs to support UNION types for this, see:
+//  * https://git.io/JOJK5
+//  * https://git.io/JOJKh
+model StatusCheckConfig {
+  createdAt DateTime        @default(now())
+  details   Json
+  id        String          @id @default(cuid())
+  type      StatusCheckType
+  check     StatusCheck?
+}
+
+enum ResultStatus {
+  DOWN
+  UP
+}
+
+model Result {
+  statusCheckId String
+  createdAt     DateTime     @default(now())
+  details       Json
+  id            String       @id @default(cuid())
+  rtt           Int?
+  status        ResultStatus
+  statusCheck   StatusCheck  @relation(fields: [statusCheckId], references: [id])
+}
