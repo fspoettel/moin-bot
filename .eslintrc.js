@@ -12,6 +12,9 @@ module.exports = {
     'ecmaVersion': 2018,
     'sourceType': 'module'
   },
+  env: {
+    node: true
+  },
   rules: {
     quotes: ['error', 'single', { 'allowTemplateLiterals': true }],
     semi: ['error', 'always'],

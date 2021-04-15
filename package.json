@@ -10,6 +10,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:production": "prisma migrate deploy",
     "prisma:seed": "prisma db seed --preview-feature",
+    "statuscheck:add": "node ./scripts/addStatusCheck",
+    "statuscheck:remove": "node ./scripts/removeStatusCheck",
     "start": "node dist/index.js",
     "serve": "tsc && (tsc -w & nodemon dist/index.js)"
   },
@@ -21,6 +23,7 @@
     "dotenv": "^8.2.0",
     "got": "^11.8.2",
     "ioredis": "^4.26.0",
+    "minimist": "^1.2.5",
     "ts-node": "^9.1.1"
   },
   "devDependencies": {
