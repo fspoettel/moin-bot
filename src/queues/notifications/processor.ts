@@ -14,12 +14,13 @@ export default function makeNotificationsProcessor(discordClient: Discord.Client
     const statusCheck = await getStatusCheckById(data.statusCheckId);
     if (statusCheck == null || !isHttpDetails(statusCheck.config.details)) return undefined;
 
+    const label = statusCheck.label || 'webpage';
     const checkConfigDetails = statusCheck.config.details;
     const url = urlFromDetails(checkConfigDetails);
 
     if (data.status === 'DOWN') {
       await sendEmbedMessage(discordClient, '@everyone', {
-        description: '⚠️ webpage is down!',
+        description: `⚠️ ${label} is down!`,
         color: 0xff0f0f,
         fields: [
           { name: 'URL', value: url, inline: false },
@@ -40,7 +41,7 @@ export default function makeNotificationsProcessor(discordClient: Discord.Client
       }
 
       await sendEmbedMessage(discordClient, '', {
-        description: '✅ webpage is back up!',
+        description: `✅ ${label} is back up!`,
         color: 0x2E7D32,
         fields,
         timestamp
