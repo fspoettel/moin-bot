@@ -31,7 +31,7 @@ export default function makeNotificationsProcessor(discordClient: Discord.Client
     } else {
       const fields = [
         { name: 'URL', value: url, inline: false },
-        { name: 'Response Time', value: `${data.details.rtt}ms`, inline: true },
+        { name: 'Response Time', value: `${data.rtt}ms`, inline: true },
       ];
 
       if (previousResult) {
