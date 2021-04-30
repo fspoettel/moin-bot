@@ -36,4 +36,8 @@ export function storeResult(statusCheckId: string, status: ResultStatus, rtt: nu
   });
 }
 
+export function getStatusCheckCount() {
+  return prismaClient.statusCheck.count();
+}
+
 export default prismaClient;

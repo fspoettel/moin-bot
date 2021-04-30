@@ -8,12 +8,17 @@ import NotificationsQueue from './queues/notifications';
 import ResultsQueue from './queues/results';
 import StatusCheckProducerQueue from './queues/producer';
 import StatusChecksQueue from './queues/statusChecks';
+import { testPrismaConnection, testRedisConnection } from './lib/helpers';
 
 const log = createLogger('main');
 
 async function main() {
   try {
     log('booting application; time:', Date.now());
+    await Promise.all([
+      testRedisConnection(),
+      testPrismaConnection()
+    ]);
 
     const discordClient = await getDiscordClient();
 
