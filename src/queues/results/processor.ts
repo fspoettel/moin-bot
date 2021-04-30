@@ -22,7 +22,7 @@ export default async function resultsProcessor(job: Job<HttpCheckResult,Notifica
     log(`skip storing result for ${statusCheckId} in database: ${data.status}`);
   }
 
-  if (statusChanged) {
+  if (statusChanged || !previousResult) {
     return { data, result: storedResult, previousResult };
   }
   return undefined;
