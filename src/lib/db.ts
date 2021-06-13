@@ -25,7 +25,7 @@ export function getLastResultByStatusCheckId(statusCheckId: string) {
   });
 }
 
-export function storeResult(statusCheckId: string, status: ResultStatus, rtt: number|null, details: Record<string, string|number>) {
+export function storeResult(statusCheckId: string, status: ResultStatus, rtt: number|null, details: Record<string, string|number|any[]>) {
   return prismaClient.result.create({
     data: {
       statusCheckId,

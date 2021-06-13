@@ -22,12 +22,12 @@ yarn prisma:seed
 
 ## scripts
 
-### add a status check
+### add a http status check
 
 ```sh
-yarn statuscheck:add --domain example.com --path /
+yarn statuscheck:http:add --domain example.com --path /
 # with optional params
-yarn statuscheck:add --domain example.com --path / --label foo --protocol http
+yarn statuscheck:http:add --domain example.com --path / --label foo --protocol http
 ```
 
 * **domain** (string) - required

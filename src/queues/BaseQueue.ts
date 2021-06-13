@@ -7,7 +7,7 @@ import {
   Worker,
   WorkerOptions,
 } from 'bullmq';
-import IBaseQueue from './interfaces/IBaseQueue';
+import IBaseQueue from '../interfaces/IBaseQueue';
 import { getRedisConnection } from '../lib/helpers';
 import createLogger from '../lib/logger';
 import { Debugger } from 'debug';

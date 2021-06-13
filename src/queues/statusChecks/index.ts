@@ -1,16 +1,19 @@
-import { Job, JobsOptions } from 'bullmq';
-import IConsumerQueue from '../interfaces/IConsumerQueue';
-import IProducerQueue from '../interfaces/IProducerQueue';
-import { HttpCheckData, HttpCheckResult } from '../../types';
+import { JobsOptions } from 'bullmq';
+import IConsumerQueue from '../../interfaces/IConsumerQueue';
+import IProducerQueue from '../../interfaces/IProducerQueue';
+import ICheck from '../../interfaces/ICheck';
+import ICheckResult from '../../interfaces/ICheckResult';
+
 import statusCheckProcessor from './processor';
 import BaseQueue from '../BaseQueue';
+import { QueueJob, ReturnValue } from './types';
 
 class StatusChecksQueue
-extends BaseQueue<HttpCheckData, HttpCheckResult>
-implements IConsumerQueue<HttpCheckData>, IProducerQueue<HttpCheckResult> {
-  consumer: IConsumerQueue<HttpCheckResult>;
+extends BaseQueue<ICheck, ReturnValue>
+implements IConsumerQueue<ICheck>, IProducerQueue<ICheckResult> {
+  consumer: IConsumerQueue<ICheckResult>;
 
-  constructor(consumer: IConsumerQueue<HttpCheckResult>) {
+  constructor(consumer: IConsumerQueue<ICheckResult>) {
     super('statusChecks', statusCheckProcessor, {
       workerOptions: { concurrency: 25 },
       defaultJobOptions: {
@@ -23,13 +26,16 @@ implements IConsumerQueue<HttpCheckData>, IProducerQueue<HttpCheckResult> {
     this.consumer = consumer;
   }
 
-  async add(name: string, data: HttpCheckData, opts?: JobsOptions) {
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  async add(name: string, data: ICheck, opts?: JobsOptions) {
     return this.queue.add(name, data, opts);
   }
 
-  async onSuccess(job: Job<HttpCheckData, HttpCheckResult>) {
+  async onSuccess(job: QueueJob): Promise<void> {
     const { returnvalue } = job;
-    this.consumer.add('result', returnvalue, {});
+    if (returnvalue != null) {
+      this.consumer.add('result', returnvalue, {});
+    }
   }
 }
 

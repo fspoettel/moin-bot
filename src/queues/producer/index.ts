@@ -1,17 +1,20 @@
-import { Job } from 'bullmq';
+import { StatusCheckType } from '@prisma/client';
+import IConsumerQueue from '../../interfaces/IConsumerQueue';
+import IProducerQueue from '../../interfaces/IProducerQueue';
+import ICheck from '../../interfaces/ICheck';
+
 import { getStatusChecksForType } from '../../lib/db';
-import IConsumerQueue from '../interfaces/IConsumerQueue';
-import IProducerQueue from '../interfaces/IProducerQueue';
-import { HttpCheckData } from '../../types';
-import statusCheckProducerProcessor from './worker';
 import BaseQueue from '../BaseQueue';
 
-class StatusCheckProducerQueue
-extends BaseQueue<{ id: string }, HttpCheckData|undefined>
-implements IProducerQueue<HttpCheckData> {
-  consumer: IConsumerQueue<HttpCheckData>;
+import statusCheckProducerProcessor from './worker';
+import { QueueJob, Payload, ReturnValue } from './types';
 
-  constructor(consumer: IConsumerQueue<HttpCheckData>) {
+class StatusCheckProducerQueue
+extends BaseQueue<Payload, ReturnValue>
+implements IProducerQueue<ICheck> {
+  consumer: IConsumerQueue<ICheck>;
+
+  constructor(consumer: IConsumerQueue<ICheck>) {
     super('statusCheckProducer', statusCheckProducerProcessor, {
       defaultJobOptions: {
         attempts: 1,
@@ -22,24 +25,34 @@ implements IProducerQueue<HttpCheckData> {
     this.consumer = consumer;
   }
 
-  async start() {
+  async start(): Promise<void> {
     await super.start();
-    const httpStatusChecks = await getStatusChecksForType('HTTP');
-    const len = httpStatusChecks.length;
-    this.log(`registering repeating jobs for ${len} status checks`);
+    await Promise.all([
+      this.startStatusChecksForType('HTTP', 60 * 1000),
+    ]);
+  }
 
-    const interval = 60 * 1000;
+  async startStatusChecksForType(type: StatusCheckType, interval: number): Promise<void> {
+    const statusChecks = await getStatusChecksForType(type);
+    const len = statusChecks.length;
+
+    this.log(`registering repeating jobs for ${len} ${type} status checks`);
 
     // TODO: consider inverting this and have "one" producer job
     // that produces n jobs
-    httpStatusChecks.forEach((check) => {
-      this.queue.add(check.id, { id: check.id }, {
+    statusChecks.forEach((check) => {
+      const job = {
+        id: check.id,
+        type,
+      };
+
+      this.queue.add(check.id, job, {
         repeat: { every: interval },
       });
     });
   }
 
-  async onSuccess(job: Job<{ id: string }, HttpCheckData|undefined>) {
+  async onSuccess(job: QueueJob): Promise<void> {
     const { returnvalue: data } = job;
 
     if (data != null) {

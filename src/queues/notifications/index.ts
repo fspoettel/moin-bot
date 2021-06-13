@@ -1,14 +1,14 @@
-import { Job, JobsOptions } from 'bullmq';
+import { JobsOptions } from 'bullmq';
 import Discord from 'discord.js';
 
-import IConsumerQueue from '../interfaces/IConsumerQueue';
-import { NotificationPayload } from '../../types';
+import IConsumerQueue from '../../interfaces/IConsumerQueue';
+import INotificationPayload from '../../interfaces/INotificationPayload';
 import BaseQueue from '../BaseQueue';
 import makeNotificationsProcessor from './processor';
 
 class NotificationsQueue
-extends BaseQueue<NotificationPayload, undefined>
-implements IConsumerQueue<NotificationPayload> {
+extends BaseQueue<INotificationPayload, undefined>
+implements IConsumerQueue<INotificationPayload> {
   constructor(discordClient: Discord.Client) {
     const notificationsProcessor = makeNotificationsProcessor(discordClient);
     super('notifications', notificationsProcessor, {
@@ -19,11 +19,11 @@ implements IConsumerQueue<NotificationPayload> {
     });
   }
 
-  async add(name: string, data: NotificationPayload, opts?: JobsOptions) {
+  async add(name: string, data: INotificationPayload, opts?: JobsOptions) {
     return this.queue.add(name, data, opts);
   }
 
-  async onSuccess(job: Job<NotificationPayload, undefined>) {
+  async onSuccess() {
    this.log('notification sent');
   }
 }

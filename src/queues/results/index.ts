@@ -1,18 +1,18 @@
-import { Job, JobsOptions } from 'bullmq';
-import IConsumerQueue from '../interfaces/IConsumerQueue';
-import IProducerQueue from '../interfaces/IProducerQueue';
-import { HttpCheckResult, NotificationPayload } from '../../types';
+import { JobsOptions } from 'bullmq';
+import IConsumerQueue from '../../interfaces/IConsumerQueue';
+import IProducerQueue from '../../interfaces/IProducerQueue';
+import ICheckResult from '../../interfaces/ICheckResult';
+import INotificationPayload from '../../interfaces/INotificationPayload';
 import resultProcessor from './processor';
 import BaseQueue from '../BaseQueue';
-
-type ResultReturnValue = NotificationPayload|undefined;
+import { QueueJob, ReturnValue } from './types';
 
 class ResultsQueue
-extends BaseQueue<HttpCheckResult, ResultReturnValue>
-implements IConsumerQueue<HttpCheckResult>, IProducerQueue<HttpCheckResult> {
-  consumer: IConsumerQueue<HttpCheckResult>;
+extends BaseQueue<ICheckResult, ReturnValue>
+implements IConsumerQueue<ICheckResult>, IProducerQueue<INotificationPayload> {
+  consumer: IConsumerQueue<INotificationPayload>;
 
-  constructor(consumer: IConsumerQueue<HttpCheckResult>) {
+  constructor(consumer: IConsumerQueue<ICheckResult>) {
     super('results', resultProcessor, {
       defaultJobOptions: { removeOnComplete: true },
       workerOptions: { concurrency: 50 },
@@ -21,11 +21,11 @@ implements IConsumerQueue<HttpCheckResult>, IProducerQueue<HttpCheckResult> {
     this.consumer = consumer;
   }
 
-  async add(name: string, data: HttpCheckResult, opts?: JobsOptions) {
+  async add(name: string, data: ICheckResult, opts?: JobsOptions) {
     return this.queue.add(name, data, opts);
   }
 
-  async onSuccess(job: Job<HttpCheckResult, ResultReturnValue>) {
+  async onSuccess(job: QueueJob): Promise<void> {
     const { returnvalue: data } = job;
 
     if (data != null) {

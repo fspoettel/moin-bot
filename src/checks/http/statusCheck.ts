@@ -1,10 +1,11 @@
 import got, { RequestError, Response } from 'got';
-import { urlFromDetails } from '../../../lib/helpers';
-import { HttpCheckFail, HttpCheckSuccess, HttpCheckData, HttpCheckResult } from '../../../types';
+import { Check, CheckResult, CheckResultDown, CheckResultUp } from './interfaces';
+import { urlFromConfig } from './lib';
 
-export default async function httpCheck(data: HttpCheckData): Promise<HttpCheckResult> {
+
+export default async function httpCheck(data: Check): Promise<CheckResult> {
   try {
-    const res = await httpRequest(urlFromDetails(data.details));
+    const res = await httpRequest(urlFromConfig(data.details));
     return formatSuccessResponse(data.statusCheckId, res);
   } catch (err: unknown) {
     if (err instanceof RequestError) {
@@ -27,19 +28,21 @@ function httpRequest(url: string): Promise<Response<string>> {
   });
 }
 
-function formatSuccessResponse(statusCheckId: string, res: Response<string>): HttpCheckSuccess {
+function formatSuccessResponse(statusCheckId: string, res: Response<string>): CheckResultUp {
   return {
     statusCheckId,
     status: 'UP',
     rtt: res.timings.phases.total ?? 0,
     details: {},
+    type: 'HTTP',
   };
 }
 
-function formatErrorResponse(statusCheckId: string, err: RequestError): HttpCheckFail {
+function formatErrorResponse(statusCheckId: string, err: RequestError): CheckResultDown {
   return {
     statusCheckId,
     status: 'DOWN',
+    type: 'HTTP',
     rtt: err.response?.timings.phases.total ?? null,
     details: {
       code: err.response?.statusCode || err?.code || err.name,
