@@ -34,8 +34,8 @@ class BaseQueue<D, R> implements IBaseQueue<D, R> {
     this.scheduler = this.createScheduler();
     this.worker = this.createWorker(processor, opts?.workerOptions ?? {});
 
-    this.worker.on('completed', job => this.onSuccess(job));
-    this.worker.on('failed', job => this.onError(job));
+    this.worker.on('completed', (job: Job<D, R>) => this.onSuccess(job));
+    this.worker.on('failed', (job: Job<D, R>) => this.onError(job));
   }
 
   private createQueue(defaultJobOptions: JobsOptions) {
