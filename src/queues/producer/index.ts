@@ -28,11 +28,11 @@ implements IProducerQueue<ICheck> {
   async start(): Promise<void> {
     await super.start();
     await Promise.all([
-      this.startStatusChecksForType('HTTP', 60 * 1000),
+      this.startStatusChecksForType('HTTP'),
     ]);
   }
 
-  async startStatusChecksForType(type: StatusCheckType, interval: number): Promise<void> {
+  async startStatusChecksForType(type: StatusCheckType): Promise<void> {
     const statusChecks = await getStatusChecksForType(type);
     const len = statusChecks.length;
 
@@ -47,7 +47,11 @@ implements IProducerQueue<ICheck> {
       };
 
       this.queue.add(check.id, job, {
-        repeat: { every: interval },
+        repeat: {
+          every: typeof check.config.interval === 'number'
+            ? check.config.interval * 1000
+            : 60 * 1000
+        },
       });
     });
   }

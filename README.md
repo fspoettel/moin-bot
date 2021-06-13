@@ -27,13 +27,14 @@ yarn prisma:seed
 ```sh
 yarn statuscheck:http:add --domain example.com --path /
 # with optional params
-yarn statuscheck:http:add --domain example.com --path / --label foo --protocol http
+yarn statuscheck:http:add --domain example.com --path / --label foo --protocol http --interval 50
 ```
 
 * **domain** (string) - required
 * **path** (string) - required
 * **label** (optional) - defaults to `--domain`
 * **protocol** (optional) - defaults to `https`
+* **interval** (optional) - defaults to `60` (seconds)
 
 ### remove a status check
 

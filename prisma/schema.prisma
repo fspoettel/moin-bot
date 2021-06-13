@@ -34,6 +34,7 @@ model StatusCheckConfig {
   createdAt DateTime        @default(now())
   details   Json
   id        String          @id @default(cuid())
+  interval  Int?            @default(60)
   type      StatusCheckType
   check     StatusCheck?
 }
