@@ -12,8 +12,6 @@ import { getRedisConnection } from '../lib/helpers';
 import createLogger from '../lib/logger';
 import { Debugger } from 'debug';
 
-type JobState = 'wait'|'completed'|'failed'|'active'|'delayed'|'paused';
-
 type BaseQueueOptions = {
   defaultJobOptions?: JobsOptions,
   workerOptions?: WorkerOptions;
@@ -33,9 +31,6 @@ class BaseQueue<D, R> implements IBaseQueue<D, R> {
     this.queue = this.createQueue(opts?.defaultJobOptions ?? {});
     this.scheduler = this.createScheduler();
     this.worker = this.createWorker(processor, opts?.workerOptions ?? {});
-
-    this.worker.on('completed', (job: Job<D, R>) => this.onSuccess(job));
-    this.worker.on('failed', (job: Job<D, R>) => this.onError(job));
   }
 
   private createQueue(defaultJobOptions: JobsOptions) {
@@ -53,37 +48,21 @@ class BaseQueue<D, R> implements IBaseQueue<D, R> {
   }
 
   private createWorker(processor: Processor, workerOptions: WorkerOptions) {
-    return  new Worker<D, R>(this.name, processor, {
+    const worker = new Worker<D, R>(this.name, processor, {
       connection: getRedisConnection(),
       ...workerOptions,
     });
+
+    worker.on('completed', (job: Job<D, R>) => this.onSuccess(job));
+    worker.on('failed', (job: Job<D, R>) => this.onError(job));
+
+    return worker;
   }
 
   async clean() {
     await this.queue.pause();
-
-    const types: JobState[] = ['wait', 'completed', 'failed', 'active', 'delayed', 'paused'];
-    await Promise.all(types.map(t => this.removeJobsForType(t)));
-
-    const repeatableJobs = await this.queue.getRepeatableJobs();
-    const repeatableJobCount = repeatableJobs.length;
-
-    if (repeatableJobCount > 0) {
-      this.log(`cleaning up ${repeatableJobCount} repeatable jobs`);
-
-      repeatableJobs.forEach((job) => {
-        this.queue.removeRepeatableByKey(job.key);
-      });
-    }
-
+    await this.queue.obliterate({ force: true });
     await this.queue.resume();
-  }
-
-  private async removeJobsForType(type: JobState) {
-    const jobs = await this.queue.getJobs(type);
-    const len = jobs.length;
-    if (len > 0) this.log(`cleaning up ${len} ${type} jobs`);
-    return jobs.map(j => j.remove());
   }
 
   async start() {
