@@ -21,7 +21,7 @@ export function isHttpResult(x: Record<string, Prisma.JsonValue>): x is CheckRes
 }
 
 export function isHttpNotifcation(x: Record<string, any>): x is NotificationPayload {
-  return typeof x === 'object' && isHttpResult(x?.data);
+  return typeof x === 'object' && typeof x?.incidentId === 'string' && x?.type === 'HTTP';
 }
 
 export function urlFromConfig(details: ConfigDetails): string {

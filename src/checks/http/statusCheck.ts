@@ -2,7 +2,6 @@ import got, { RequestError, Response } from 'got';
 import { Check, CheckResult, CheckResultDown, CheckResultUp } from './interfaces';
 import { urlFromConfig } from './lib';
 
-
 export default async function httpCheck(data: Check): Promise<CheckResult> {
   try {
     const res = await httpRequest(urlFromConfig(data.details));

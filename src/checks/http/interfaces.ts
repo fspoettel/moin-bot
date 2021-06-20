@@ -32,5 +32,5 @@ export interface CheckResultDown extends ICheckResult {
 export type CheckResult = CheckResultUp|CheckResultDown;
 
 export interface NotificationPayload extends INotificationPayload {
-  data: CheckResult;
+  type: 'HTTP';
 }

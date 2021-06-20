@@ -1,31 +1,38 @@
-import { Result } from '@prisma/client';
-import INotificationPayload from '../../interfaces/INotificationPayload';
-import { storeResult } from '../../lib/db';
-import createLogger from '../../lib/logger';
-import { CheckResult } from './interfaces';
+import { createIncident, getLatestIncident,  setIncidentStatus, storeResult } from '../../lib/db';
+import { CheckResult, NotificationPayload } from './interfaces';
 
-function hasStatusChanged(data: CheckResult, previousResult: Result|null) {
-  return previousResult && previousResult.status !== data.status;
-}
-
-const log = createLogger(`resultHandler:http`);
-
-export default async function handleHttpResult(data: CheckResult, previousResult: Result|null): Promise<INotificationPayload|undefined> {
+export default async function handleHttpResult(data: CheckResult): Promise<NotificationPayload|undefined> {
   const { details, rtt, status, statusCheckId } = data;
 
-  const statusChanged = hasStatusChanged(data, previousResult);
+  const latestIncident = await getLatestIncident(statusCheckId);
 
-  let storedResult = null;
+  const activeIncident = latestIncident != null && latestIncident.status !== 'RESOLVED'
+    ? latestIncident
+    : null;
 
-  // optimization: we do not need to store subsequent FAILs currently
-  if (data.status === 'UP' || !previousResult || statusChanged) {
-    storedResult = await storeResult(statusCheckId, status, rtt, details);
-  } else {
-    log(`skip storing result for ${statusCheckId} in database: ${data.status}`);
+  let result;
+
+  if (data.status === 'UP') {
+      // TODO: take into account `incidentThreshold`
+    if (activeIncident) await setIncidentStatus(activeIncident.id, 'RESOLVED');
+
+    result = await storeResult(statusCheckId, status, rtt, details, activeIncident?.id);
+  } else if (data.status === 'DOWN') {
+    const incident = activeIncident
+      // TODO: take into account `incidentThreshold`
+      ? await setIncidentStatus(activeIncident.id, 'ONGOING')
+      : await createIncident(statusCheckId);
+
+      result = await storeResult(statusCheckId, status, rtt, details, incident.id);
   }
 
-  if (statusChanged || !previousResult) {
-    return { data, result: storedResult, previousResult };
+  if (result?.incidentId && result.incident?.status !== latestIncident?.status) {
+    return {
+      incidentId: result.incidentId,
+      previousStatus: activeIncident?.status,
+      type: 'HTTP',
+    };
   }
+
   return undefined;
 }

@@ -24,19 +24,23 @@ model StatusCheck {
   config    StatusCheckConfig @relation(fields: [configId], references: [id])
   label     String            @unique
   results   Result[]
+  incidents Incident[]
 }
 
-// @TODO: use explicit configurations such as `HttpCheckConfig` istd. of generic JSON.
-// prisma needs to support UNION types for this, see:
-//  * https://git.io/JOJK5
-//  * https://git.io/JOJKh
 model StatusCheckConfig {
-  createdAt DateTime        @default(now())
-  details   Json
-  id        String          @id @default(cuid())
-  interval  Int?            @default(60)
-  type      StatusCheckType
-  check     StatusCheck?
+  createdAt         DateTime        @default(now())
+  // @TODO: use explicit configurations such as `HttpCheckConfig` istd. of generic JSON.
+  // prisma needs to support UNION types for this, see:
+  //  * https://git.io/JOJK5
+  //  * https://git.io/JOJKh
+  details           Json
+  id                String          @id @default(cuid())
+  // time between checks, in seconds
+  interval          Int?            @default(60)
+  // the number of consecutive failures until a notification is sent
+  incidentThreshold Int?            @default(1)
+  type              StatusCheckType
+  check             StatusCheck?
 }
 
 enum ResultStatus {
@@ -49,7 +53,25 @@ model Result {
   createdAt     DateTime     @default(now())
   details       Json
   id            String       @id @default(cuid())
+  incidentId    String?
   rtt           Int?
   status        ResultStatus
+  incident      Incident?    @relation(fields: [incidentId], references: [id])
   statusCheck   StatusCheck  @relation(fields: [statusCheckId], references: [id])
+}
+
+enum IncidentStatus {
+  NEW
+  ONGOING
+  RESOLVED
+}
+
+model Incident {
+  createdAt     DateTime       @default(now())
+  resolvedAt    DateTime?
+  id            String         @id @default(cuid())
+  results       Result[]
+  status        IncidentStatus @default(ONGOING)
+  statusCheckId String
+  statusCheck   StatusCheck    @relation(fields: [statusCheckId], references: [id])
 }
