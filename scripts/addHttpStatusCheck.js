@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 (async () => {
   const argv = minimist(process.argv.slice(2));
 
-  const { label, domain, path, interval } = argv;
+  const { label, domain, path, interval, threshold } = argv;
   if (!domain || !path) throw new Error('need to specify --domain and --path');
 
   await prisma.statusCheck.create({
@@ -17,6 +17,7 @@ const prisma = new PrismaClient();
         create: {
           type: 'HTTP',
           interval,
+          incidentThreshold: threshold,
           details: { domain, path },
         },
       },

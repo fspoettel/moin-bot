@@ -35,6 +35,7 @@ yarn statuscheck:http:add --domain example.com --path / --label foo --protocol h
 * **label** (optional) - defaults to `--domain`
 * **protocol** (optional) - defaults to `https`
 * **interval** (optional) - defaults to `60` (seconds)
+* **threshold** (optional) - # of failing checks before a notification is sent. defaults to `1`
 
 ### remove a status check
 

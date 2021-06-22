@@ -16,22 +16,31 @@ export default async function httpNotification(
   const { incidentId, previousStatus, type } = payload;
 
   const incident = await getIncidentWithResults(incidentId);
-
-  if (incident == null) return;
-  if (incident.status === previousStatus || incident.status === 'NEW') return;
+  if (
+    incident == null ||
+    incident.status === previousStatus ||
+    incident.status === 'UNCONFIRMED'
+  ) {
+    return;
+  }
 
   const statusCheck = await getStatusCheckById(incident.statusCheckId);
-  if (!statusCheck || !isHttpConfig(statusCheck.config.details) || type !== 'HTTP') throw new TypeError('unexpected config format;');
+  if (
+    statusCheck == null ||
+    !isHttpConfig(statusCheck.config.details)
+    || type !== 'HTTP'
+  ) {
+    throw new TypeError('unexpected config format;');
+  }
 
   const timestamp = Date.now();
 
   const label = statusCheck.label || 'webpage';
-  const checkConfigDetails = statusCheck.config.details;
-  const url = urlFromConfig(checkConfigDetails);
+  const url = urlFromConfig(statusCheck.config.details);
 
   const currentResult = incident.results[incident.results.length - 1];
 
-  if (incident.status === 'ONGOING' && previousStatus !== 'ONGOING') {
+  if (incident.status === 'CONFIRMED' && previousStatus !== 'CONFIRMED') {
     if (!isErrorDetails(currentResult.details)) throw new Error('current result has unexpected format');
 
     await sendEmbedMessage(discordClient, '@everyone', {
@@ -43,13 +52,13 @@ export default async function httpNotification(
       ],
       timestamp
     });
-  } else if (incident.status === 'RESOLVED' && previousStatus === 'ONGOING') {
+  } else if (incident.status === 'RESOLVED' && previousStatus === 'CONFIRMED') {
     const fields = [
       { name: 'URL', value: url, inline: false },
       { name: 'Response Time', value: `${currentResult.rtt}ms`, inline: true },
     ];
 
-    const prevTime = new Date(incident.results[0].createdAt);
+    const prevTime = new Date(incident.createdAt);
     const downTime = ((timestamp - prevTime.getTime()) / 1000 / 60).toFixed(1);
     fields.push({ name: 'Downtime', value: `${downTime}min`, inline: true });
 

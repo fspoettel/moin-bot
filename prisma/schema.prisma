@@ -61,8 +61,8 @@ model Result {
 }
 
 enum IncidentStatus {
-  NEW
-  ONGOING
+  UNCONFIRMED
+  CONFIRMED
   RESOLVED
 }
 
@@ -71,7 +71,7 @@ model Incident {
   resolvedAt    DateTime?
   id            String         @id @default(cuid())
   results       Result[]
-  status        IncidentStatus @default(ONGOING)
+  status        IncidentStatus @default(UNCONFIRMED)
   statusCheckId String
   statusCheck   StatusCheck    @relation(fields: [statusCheckId], references: [id])
 }

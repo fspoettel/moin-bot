@@ -23,9 +23,7 @@ implements IConsumerQueue<INotificationPayload> {
     return this.queue.add(name, data, opts);
   }
 
-  async onSuccess() {
-   this.log('notification sent');
-  }
+  async onSuccess() {/** */}
 }
 
 export default NotificationsQueue;

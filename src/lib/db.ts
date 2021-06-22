@@ -1,8 +1,12 @@
-import { Incident, PrismaClient, Result, ResultStatus, StatusCheckType } from '@prisma/client';
+import { Incident, PrismaClient, Result, ResultStatus, StatusCheck, StatusCheckConfig, StatusCheckType } from '@prisma/client';
 
 const prismaClient = new PrismaClient();
 
-export function getStatusChecksForType(type: StatusCheckType) {
+type IncidentWithResults = Incident & { results: Result[] };
+type StatusCheckWithConfig = StatusCheck & { config: StatusCheckConfig };
+type ResultWithIncident = Result & { incident: Incident|null };
+
+export function getStatusChecksForType(type: StatusCheckType): Promise<StatusCheckWithConfig[]> {
   return prismaClient.statusCheck.findMany({
     where: {
       config: { type }
@@ -11,21 +15,28 @@ export function getStatusChecksForType(type: StatusCheckType) {
   });
 }
 
-export function getStatusCheckById(id: string) {
+export function getStatusCheckById(id: string): Promise<StatusCheckWithConfig|null> {
   return prismaClient.statusCheck.findFirst({
     where: { id },
     include: { config: true },
   });
 }
 
-export function getLatestIncident(statusCheckId: string) {
+export function getLatestIncident(statusCheckId: string): Promise<IncidentWithResults|null> {
   return prismaClient.incident.findFirst({
     where: { statusCheckId },
     orderBy: { createdAt: 'desc' },
+    include: {
+      results: {
+        orderBy: {
+          createdAt: 'asc'
+        }
+      }
+    }
   });
 }
 
-export function setIncidentStatus(incidentId: string, status: 'ONGOING'|'RESOLVED') {
+export function setIncidentStatus(incidentId: string, status: 'CONFIRMED'|'RESOLVED'): Promise<Incident> {
   return prismaClient.incident.update({
     where:{ id: incidentId },
     data: {
@@ -35,16 +46,16 @@ export function setIncidentStatus(incidentId: string, status: 'ONGOING'|'RESOLVE
   });
 }
 
-export function createIncident(statusCheckId: string) {
+export function createIncident(statusCheckId: string, status: 'CONFIRMED'|'UNCONFIRMED'): Promise<Incident> {
   return prismaClient.incident.create({
     data: {
       statusCheckId,
-      status: 'ONGOING',
+      status,
     }
   });
 }
 
-export function getIncidentWithResults(id: string) {
+export function getIncidentWithResults(id: string): Promise<IncidentWithResults|null> {
   return prismaClient.incident.findFirst({
     where: { id },
     include: {
@@ -63,7 +74,7 @@ export function storeResult(
   rtt: number|null,
   details: Record<string, string|number|any[]>,
   incidentId?: string
-): Promise<Result & { incident: Incident|null }> {
+): Promise<ResultWithIncident> {
   return prismaClient.result.create({
     data: {
       incidentId,
@@ -76,7 +87,7 @@ export function storeResult(
   });
 }
 
-export function getStatusCheckCount() {
+export function getStatusCheckCount(): Promise<number> {
   return prismaClient.statusCheck.count();
 }
 

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Incident" ALTER COLUMN "status" SET DEFAULT E'UNCONFIRMED';
