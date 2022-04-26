@@ -31,8 +31,8 @@ model StatusCheckConfig {
   createdAt         DateTime        @default(now())
   // @TODO: use explicit configurations such as `HttpCheckConfig` istd. of generic JSON.
   // prisma needs to support UNION types for this, see:
-  //  * https://git.io/JOJK5
-  //  * https://git.io/JOJKh
+  //  * https://github.com/prisma/prisma/issues/2505
+  //  * https://github.com/prisma/prisma/issues/1644
   details           Json
   id                String          @id @default(cuid())
   // time between checks, in seconds
